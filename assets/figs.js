@@ -125,12 +125,11 @@
     const Rc = h("div", "f1-right vizcard", root);
     const rh = h("div", "viz-head", Rc);
     html("h3", "f1-title", rh, "When does it help or hurt?");
-    let reasoner = "Gemini-3.8 Flash";
-    const rs = seg(rh, "Reasoner", Object.keys(V.READ.reasoners).map(k => ({key: k, label: k.split(" ")[0].replace("-5.6", "").replace("3.8-27B", "Qwen") })), reasoner, k => { reasoner = k; draw(true); });
-    $$("button", rs).forEach((b, i) => { b.textContent = ["Qwen", "GPT", "Gemini"][i]; b.title = Object.keys(V.READ.reasoners)[i]; });
+    const reasoner = "Gemini-3.8 Flash";                 /* one backbone, as in the paper's figure */
+    html("span", "f1-backbone", rh, "Backbone: <b>Gemini 3.8</b>");
     const box = h("div", "viz-chart", Rc), svg = svgEl("svg", {role: "img", "aria-label": "Radar: performance with an executable state relative to the same model without one"}, box);
     const lg = h("div", "viz-legend", Rc);
-    h("p", "viz-note", Rc, "Each spoke is the score with the state divided by the score without it; the grey ring is “no change”. Read spokes compare the reasoner on video; novel views compare the best diffusion model; planning and prediction compare MiniMax-H3 alone. Hover a spoke for the numbers, click it for the results.");
+    h("p", "viz-note", Rc, "Each spoke is the score with the state divided by the score without it; the grey ring is “no change”. Read spokes compare Gemini 3.8 on video; novel views compare the best diffusion model; planning and prediction compare MiniMax-H3 alone. Hover a spoke for the numbers, click it for the results.");
     const btns = h("div", "f1-btns", Rc); paperBtn(btns, "assets/paper/fig1_teaser.png", "Paper figure");
     let g = null; const pts = new Map();
     function draw(anim) {

@@ -105,7 +105,7 @@
     function frame(now) {
       requestAnimationFrame(frame);
       if (!visible) return;
-      const t = (now - t0) / 1000;
+      const t = Math.max(0, (now - t0) / 1000);
       cy += ((calm ? 0 : t * 0.06) + tYaw - cy) * 0.05; cp += (tPitch - cp) * 0.05;
       const a = yaw + cy, el = pitch + cp, d = R * 2.35;
       const e = [C[0] + Math.cos(a) * Math.cos(el) * d, C[1] + Math.sin(el) * d, C[2] + Math.sin(a) * Math.cos(el) * d];

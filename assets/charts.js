@@ -450,6 +450,8 @@
       if (anim && !calm) { ar.style.strokeDasharray = L; ar.style.strokeDashoffset = L; requestAnimationFrame(() => setTimeout(() => { ar.style.transition = "stroke-dashoffset .6s ease .45s"; ar.style.strokeDashoffset = 0; }, 20)); }
       const at = svgEl("text", {x: (x(a[0]) + x(b[0])) / 2 + 10, y: (y(a[1]) + y(b[1])) / 2, class: "callout"}, g.arrow);
       at.textContent = "render the plan with MiniMax-H3";
+      const over = +at.getAttribute("x") + at.getComputedTextLength() - (W - 6);
+      if (over > 0) at.setAttribute("x", Math.max(4, +at.getAttribute("x") - over));          /* on a narrow chart, slide it back inside */
       const tagList = [];
       GCP.forEach(r => {
         let d = dots.get(r.name);

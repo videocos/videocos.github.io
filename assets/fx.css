@@ -95,10 +95,10 @@
 @keyframes blink { 50% { opacity: 0; } }
 
 /* charts */
-.vizcard { display: grid; gap: 12px; min-width: 0; padding: clamp(14px, 1.8vw, 20px); border-radius: 18px; border: 1px solid var(--line); background: var(--panel); }
+.vizcard { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; min-width: 0; padding: clamp(14px, 1.8vw, 20px); border-radius: 18px; border: 1px solid var(--line); background: var(--panel); }
 .viz-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; align-items: center; }
-.viz-ctrl { display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; }
-.vizcard .seg { display: inline-grid; border-radius: 999px; }
+.viz-ctrl { display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; max-width: 100%; }
+.vizcard .seg { display: inline-grid; border-radius: 999px; max-width: 100%; }
 .vizcard .seg button { padding: 7px 13px; font-size: 13.5px; white-space: nowrap; transition: background .2s, color .2s; }
 .vizcard .seg button[aria-pressed="true"] { background: var(--text); color: var(--ground); box-shadow: none; }
 .viz-views button { min-width: 54px; }
@@ -181,8 +181,9 @@
 .group { scroll-margin-top: 70px; }
 
 /* wipe compare */
-.wipe { display: grid; gap: 12px; }
-.wipe-bar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; align-items: center; }
+.wipe { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.wipe-bar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; align-items: center; min-width: 0; }
+.wipe-bar .tabs { min-width: 0; max-width: 100%; }
 .wipe-bar .tabs button { font-size: 14px; padding: 7px 13px; }
 .wipe-stage { --p: 50%; position: relative; aspect-ratio: 3 / 2; max-height: 560px; width: 100%; border-radius: 16px; overflow: hidden; background: var(--tile); cursor: ew-resize; touch-action: none; user-select: none; box-shadow: var(--shadow); }
 .wipe-stage video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
@@ -228,6 +229,8 @@
 :root[data-theme="dark"] { --hm-pos: #6F8CFF; --hm-neg: #F06A7E; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --hm-pos: #6F8CFF; --hm-neg: #F06A7E; } }
 .f1-title { font-size: 18px; letter-spacing: -.01em; font-weight: 700; }
+.f1-backbone { font: 500 13.5px/1.2 var(--font); color: var(--muted); padding: 7px 13px; border: 1px solid var(--line); border-radius: 999px; white-space: nowrap; }
+.f1-backbone b { font-weight: 650; color: var(--text); }
 .paperbtn { margin-top: 2px; }
 .figcap { font-size: 14.5px; color: var(--faint); text-align: center; max-width: 92ch; margin: 12px auto 0; }
 .figrow { display: flex; justify-content: center; gap: 10px; margin-top: 10px; }
