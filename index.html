@@ -16,6 +16,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:wght@400..600&family=Google+Sans+Flex:opsz,wdth,wght@6..144,25..151,1..1000&display=swap">
 <link rel="stylesheet" href="assets/site.css">
+<link rel="stylesheet" href="assets/fx.css">
 </head>
 <body>
 
@@ -25,12 +26,16 @@
     <nav aria-label="Sections">
       <a href="#idea">Idea</a><a href="#explore">Explore</a><a href="#results">Results</a><a href="#findings">Findings</a><a href="#cite">Cite</a>
     </nav>
+    <button type="button" id="theme" aria-label="Dark mode" aria-pressed="false"><svg class="sun" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><svg class="moon" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></button>
   </div>
+  <div class="progress"><i></i></div>
 </header>
 
 <main id="top">
 
 <section class="hero">
+  <canvas id="hero-canvas" data-scene="kitchen" aria-hidden="true"></canvas>
+  <div id="hero-readout" class="readout mono" aria-hidden="true"></div>
   <div class="wrap">
     <h1><span class="wordmark">Video<b>CoS</b></span><span class="sub">When Do Executable World States Help Video Reasoning and Generation?</span></h1>
     <p class="authors">
@@ -42,9 +47,15 @@
             <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M5.2 4.2 1.4 8l3.8 3.8 1-1L3.5 8l2.7-2.8zM10.8 4.2l-1 1L12.5 8l-2.7 2.8 1 1L14.6 8z"/></svg>Code</a>
           <a class="btn" href="https://huggingface.co/datasets/Shoubin/VideoCoS-demo">
             <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.4" d="M2.5 4c0-1 2.5-1.8 5.5-1.8S13.5 3 13.5 4s-2.5 1.8-5.5 1.8S2.5 5 2.5 4zm0 0v8c0 1 2.5 1.8 5.5 1.8s5.5-.8 5.5-1.8V4M2.5 8c0 1 2.5 1.8 5.5 1.8S13.5 9 13.5 8"/></svg>Demo data</a>
-          <a class="btn" href="assets/paper/VideoCoS.pdf">
-            <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" d="M4 1.8h5.2L12.5 5v9.2H4zM9 1.8V5.2h3.4M6 8.2h4.6M6 10.6h4.6"/></svg>Paper</a>
+          <span class="btn soon" title="The arXiv link will be added at release">Paper · arXiv soon</span>
         </div>
+    <p class="hint">Move your cursor: the room behind this title is a codified world state. Point at a box to read it.</p>
+    <div class="stats">
+      <div class="stat state glow rv"><b data-count="7">0</b><span>state-centric tasks</span><small>4 read · 3 write</small></div>
+      <div class="stat glow rv d1"><b data-count="2838">0</b><span>evaluation samples</span><small>VSI-Bench · Kubric-4D · Ego2Act · Physics-IQ</small></div>
+      <div class="stat read glow rv d2"><b data-count="21.9" data-dec="1" data-prefix="+">0</b><span>pts on viewpoint questions</span><small>GPT-5.6 Luna, code vs. video</small></div>
+      <div class="stat write glow rv d3"><b data-count="12.7" data-dec="1" data-suffix="×">0</b><span>object mIoU in novel views</span><small>vs. the best diffusion model, 42°</small></div>
+    </div>
     <figure class="film" id="film">
       <video controls playsinline preload="metadata" poster="assets/video/videocos_demo_poster.jpg" src="assets/video/videocos_demo_720p.mp4"></video>
       <figcaption>The idea in one minute. Every query, edit and simulation in the film was executed on this scene through the released reasoning harness; the scene’s perception is the dataset’s ground-truth annotation.</figcaption>
@@ -54,32 +65,46 @@
 
 <section class="band" id="idea">
   <div class="wrap">
-    <div class="head">
+    <div class="head rv">
       <p class="eyebrow">Formulation</p>
       <h2>Reasoning is a <em class="t-read">read</em>, generation is a <em class="t-write">write</em>,<br>over the <em class="t-state">executable world states</em>.</h2>
       <p class="lead">Video reasoning and generation both depend on the underlying world state: which entities exist, where they are, and how they and the camera move. VideoCoS makes that state explicit as an executable Blender program, built once per video, and asks when this helps.</p>
     </div>
-    <div class="trio">
-      <div><span class="chip state">Codify</span><p>A perception-grounded coding agent reconstructs a reusable scene program from raw video. It reads depth, camera poses, tracks and 3D boxes, then loops: write code, execute it, check and render, repair.</p></div>
-      <div><span class="chip read">Read</span><p>A separate reasoning agent works from the program alone. It answers with state queries: find objects, measure them, take an imagined viewpoint, replay the camera’s history.</p></div>
-      <div><span class="chip write">Write</span><p>The same agent edits the state and renders it: a new camera for novel-view synthesis, new object poses for goal-conditioned planning, forward simulation for future prediction.</p></div>
+    <div class="pipe rv" id="pipe">
+      <div class="pipe-steps" role="tablist" aria-label="Codify, read, write">
+        <button type="button" role="tab" class="pipe-step s-state" aria-selected="false"><span class="num">01</span><span class="chip state">Codify</span><p>A perception-grounded coding agent reconstructs a reusable scene program from raw video. It reads depth, camera poses, tracks and 3D boxes, then loops: write code, execute it, check and render, repair.</p><span class="pipe-timer"><i></i></span></button>
+        <button type="button" role="tab" class="pipe-step s-read" aria-selected="false"><span class="num">02</span><span class="chip read">Read</span><p>A separate reasoning agent works from the program alone. It answers with state queries: find objects, measure them, take an imagined viewpoint, replay the camera’s history.</p><span class="pipe-timer"><i></i></span></button>
+        <button type="button" role="tab" class="pipe-step s-write" aria-selected="false"><span class="num">03</span><span class="chip write">Write</span><p>The same agent edits the state and renders it: a new camera for novel-view synthesis, new object poses for goal-conditioned planning, forward simulation for future prediction.</p><span class="pipe-timer"><i></i></span></button>
+      </div>
+      <div class="pipe-view">
+        <svg class="pipe-flow" viewBox="0 0 700 160" role="img" aria-label="Video is codified into an executable state, which is read for answers or written and rendered into video">
+          <path class="edge e-codify on" d="M172 80 H262"/><path class="edge e-read on" d="M452 70 C 492 70, 492 40, 532 40"/><path class="edge e-write on" d="M452 90 C 492 90, 492 120, 532 120"/>
+          <text class="elab" x="217" y="68" text-anchor="middle">codify</text><text class="elab" x="492" y="30" text-anchor="middle">read</text><text class="elab" x="492" y="142" text-anchor="middle">write</text>
+          <g class="node n-video"><rect x="14" y="50" width="158" height="60" rx="13"/><path class="ico" d="M32 69h22v22H32zM54 76l9-5v18l-9-5"/><text x="120" y="85" text-anchor="middle">Raw video</text></g>
+          <g class="node n-state"><rect x="262" y="38" width="190" height="84" rx="15"/><path class="ico" style="stroke:var(--brand)" d="M282 68l14-8 14 8v16l-14 8-14-8zM282 68l14 8 14-8M296 76v16"/><text x="380" y="75" text-anchor="middle">scene.py</text><text x="380" y="95" text-anchor="middle" style="font-weight:500;font-size:12px">executable state</text></g>
+          <g class="node n-answer"><rect x="532" y="14" width="154" height="52" rx="13"/><text x="609" y="45" text-anchor="middle">Answer</text></g>
+          <g class="node n-render"><rect x="532" y="94" width="154" height="52" rx="13"/><text x="609" y="125" text-anchor="middle">New video</text></g>
+        </svg>
+        <div class="pipe-code"><div class="cb"><i></i><i></i><i></i><span class="fname">scene.py</span></div><pre class="mono"></pre><div class="pipe-out"></div></div>
+      </div>
     </div>
-    <div class="sheets">
-      <figure class="sheet">
-        <button type="button" aria-label="Enlarge Figure 1"><img loading="lazy" src="assets/paper/fig1_teaser.png" width="2000" height="752" alt="Figure 1 of the paper. Left: a latent-space state inside video-language and video diffusion models, against an executable world state built by video codification, which is queried by query.py and edited by generate.py. Right: a radar chart of gains and losses across read and write tasks."></button>
-        <figcaption>Figure 1. Left: unlike models with implicit, entangled latents, VideoCoS codifies a video once into an executable program, an explicit, factorized and persistent state that an agent queries to answer questions, or edits and simulates to render new videos. Right: performance relative to the same base model without an executable state.</figcaption>
-      </figure>
-      <figure class="sheet">
-        <button type="button" aria-label="Enlarge Figure 3"><img loading="lazy" src="assets/paper/fig3_method.png" width="2000" height="1361" alt="Figure 3 of the paper: video perception extraction feeds read-only evidence files to a coding agent that looks at evidence, writes code, executes it in a sandboxed Blender and checks the render; the resulting executable world state is read and written by a reasoning agent through a tool set."></button>
-        <figcaption>Figure 3. The codification agent turns perception evidence into an executable scene program through a loop of building, checking and rendering. The reasoning agent then reads this scene to answer questions, or edits and simulates it to generate videos. It receives only text feedback from tools and never sees the frames.</figcaption>
-      </figure>
+    <div class="xfig rv">
+      <span class="eyebrow">Figure 1 · interactive</span>
+      <div id="fig1x"></div>
+      <p class="figcap">Left: unlike models with implicit, entangled latents, VideoCoS codifies a video once into an executable program, an explicit, factorized and persistent state that an agent queries to answer questions, or edits and simulates to render new videos. Right: performance relative to the same base model without an executable state.</p>
+    </div>
+    <div class="xfig rv">
+      <span class="eyebrow">Figure 3 · interactive</span>
+      <div id="fig3x"></div>
+      <p class="figcap">The codification agent turns perception evidence into an executable scene program through a loop of building, checking and rendering. The reasoning agent then reads this scene to answer questions, or edits and simulates it to generate videos. It receives only text feedback from tools and never sees the frames. Tool outputs here are illustrative.</p>
+      <div class="figrow paper-f3"></div>
     </div>
   </div>
 </section>
 
 <section id="explore">
   <div class="wrap">
-    <div class="head">
+    <div class="head rv">
       <p class="eyebrow">Interactive</p>
       <h2>Open a world state</h2>
       <p class="lead">Each scene below is an executable world state, exported from its Blender file. Four things to try:</p>
@@ -87,8 +112,8 @@
     <ul class="howto">
       <li><b><span class="key">Drag</span>Look around</b>Drag to turn the scene. Click it once, then scroll to zoom; right-drag to pan.</li>
       <li><b><span class="key">Click</span>Inspect an object</b>Click any object to read its record: category, position and size, as a reasoning agent reads them. Double-click to fly to it.</li>
-      <li><b><span class="key">Measure</span>Measure a distance</b>Switch the tool to Measure, then click two objects to get the distance between them.</li>
-      <li><b><span class="key">Play</span>Replay the video</b>Press play under the scene: the input video runs beside it while the camera retraces its path. In the film scene the objects move too.</li>
+      <li><b><span class="key">Ask</span>Ask the state</b>Pick a question: the agent’s tool calls run on the scene, light up the objects they touch and submit an answer. Or Measure two objects yourself.</li>
+      <li><b><span class="key">Move ✦</span>Write to it</b>Switch to Move and drag any object across the floor: you are editing the program’s state, the way a write task does. Play replays the input video.</li>
     </ul>
     <div class="viewer" id="viewer" data-first="apartment">
       <div class="tabs" role="group" aria-label="Scene">
@@ -117,11 +142,13 @@
         <div class="seg" role="group" aria-label="Tool">
           <button type="button" data-mode="inspect" aria-pressed="true">Inspect</button>
           <button type="button" data-mode="measure" aria-pressed="false">Measure</button>
+          <button type="button" data-mode="move" aria-pressed="false" title="Edit the state: drag objects">Move ✦</button>
         </div>
         <div class="console">
           <div class="cbar"><span>query.py</span><span>inspect</span></div>
           <pre class="mono" aria-live="polite"># Click an object to read its record.</pre>
         </div>
+        <div class="v-ask"><b>Ask the state</b><div class="ask-chips"></div></div>
         <div class="v-toggles">
           <label><input type="checkbox" id="v-path" checked>Camera path</label>
           <label><input type="checkbox" id="v-ceil">Ceiling</label>
@@ -132,6 +159,7 @@
           <button type="button" class="btn small" data-view="top">Top</button>
           <button type="button" class="btn small" data-view="in" aria-label="Zoom in">+</button>
           <button type="button" class="btn small" data-view="out" aria-label="Zoom out">−</button>
+          <button type="button" class="btn small" data-view="undo" hidden>Undo edits</button>
         </div>
       </div>
     </div>
@@ -145,24 +173,22 @@
 
 <section class="band" id="results">
   <div class="wrap">
-    <div class="head">
+    <div class="head rv">
       <p class="eyebrow">Results</p>
       <h2>Evaluation on four <em class="t-read">read</em> tasks and three <em class="t-write">write</em> tasks</h2>
       <p class="lead">Each task family probes a different component of the state: its entities, their geometry over time, or the camera. Benchmarks ship no ground-truth scene programs, so every state below was inferred from raw video.</p>
     </div>
-    <figure class="sheet">
-      <button type="button" aria-label="Enlarge Table 1"><img loading="lazy" src="assets/paper/tab1_tasks.png" width="1992" height="492" alt="Table 1 of the paper: the seven task families. Read: entity, geometric, viewpoint and history querying on VSI-Bench-Debiased with 251, 1297, 496 and 318 samples. Write: novel-view synthesis on Kubric-4D with 300, goal-conditioned planning on Ego2Act with 110, future prediction on Physics-IQ with 66."></button>
-    </figure>
+    <div id="taskmap" class="rv"></div>
 
-    <div class="group read">
-      <div class="group-head">
+    <div class="group read" id="res-read">
+      <div class="group-head viz">
         <div class="txt">
           <span class="chip read">Read · entity, geometric, viewpoint, history querying</span>
           <h3>A video becomes an executable world state the agent can <em>query</em></h3>
           <p>VSI-Bench-Debiased. The same reasoner answers from the video, or from a codified scene alone. <b>Viewpoint questions gain most</b>, by 21.9 and 17.5 points for GPT and Gemini; history questions lose for every reasoner.</p>
           <p>Below, each room’s raw video beside three codified scenes of it: two from the agents of BVB, one from VideoCoS, each rendered through its own estimated camera.</p>
         </div>
-        <figure class="sheet"><button type="button" aria-label="Enlarge Table 2"><img loading="lazy" src="assets/paper/tab2_read.png" width="962" height="728" alt="Table 2 of the paper: state querying results on VSI-Bench-Debiased for three reasoners, with video input, with code input from BVB scenes, and with code input from VideoCoS scenes."></button></figure>
+        <div data-viz="read" class="rv"></div>
       </div>
       <div class="gallery" data-gallery>
         <div class="tabs" role="group" aria-label="Room"></div>
@@ -173,14 +199,26 @@
       <p class="note">Clips run at twice real time. These five rooms were chosen among those where the VideoCoS scene answers more questions. BVB’s scenes often look cleaner; VideoCoS follows the camera pose and the object layout of the video more closely.</p>
     </div>
 
-    <div class="group write">
-      <div class="group-head">
+    <div class="group write" id="res-nvs">
+      <div class="group-head viz">
         <div class="txt">
           <span class="chip write">Write · novel-view synthesis</span>
           <h3>Change the <em>camera</em>, keep the scene</h3>
           <p>Kubric-4D. The agent writes only the camera, and Blender renders the same scene again. <b>VideoCoS leads on both metrics at every camera shift</b>, and its object mIoU stays at 0.224 to 0.254 from 42° to 128°.</p>
         </div>
-        <figure class="sheet"><button type="button" aria-label="Enlarge Table 3"><img loading="lazy" src="assets/paper/tab3_nvs.png" width="962" height="584" alt="Table 3 of the paper: novel-view synthesis results on Kubric-4D at low, medium and high view change."></button></figure>
+        <div data-viz="nvs" class="rv"></div>
+      </div>
+      <div class="wipe rv" id="wipe">
+        <div class="wipe-bar">
+          <div class="tabs" role="group" aria-label="Method on the left"><button type="button" data-wm="ours" aria-pressed="true">VideoCoS</button><button type="button" data-wm="recammaster" aria-pressed="false">ReCamMaster</button><button type="button" data-wm="cognvs" aria-pressed="false">CogNVS</button><button type="button" data-wm="input" aria-pressed="false">Input view</button></div>
+          <div class="tabs" role="group" aria-label="Scene"><button type="button" data-wscn="02912" aria-pressed="true">Scene 1</button><button type="button" data-wscn="02924" aria-pressed="false">Scene 2</button></div>
+        </div>
+        <div class="wipe-stage">
+          <video class="wipe-left" preload="none"></video><video class="wipe-right" preload="none"></video>
+          <span class="wipe-tag l ours">VideoCoS</span><span class="wipe-tag r">Target view (truth)</span>
+          <div class="wipe-handle" role="slider" tabindex="0" aria-label="Wipe position" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"><span>⇆</span></div>
+        </div>
+        <p class="note" style="text-align:center">Drag across the video to wipe between a method and the true target view. All five views of both scenes play below.</p>
       </div>
       <div class="ex">
         <div class="strip five" style="--n:5;--ar:3/2">
@@ -202,14 +240,14 @@
       </div>
     </div>
 
-    <div class="group write">
-      <div class="group-head">
+    <div class="group write" id="res-gcp">
+      <div class="group-head viz">
         <div class="txt">
           <span class="chip write">Write · goal-conditioned planning</span>
           <h3>Plan the <em>motion</em> in the state, then render it</h3>
           <p>Ego2Act. From one start photo and a goal, the agent keyframes rigid object motion in Blender. <b>Rendered in Blender, VideoCoS has the second-highest task score</b> after Seedance-2.0, and the lowest physical score: the plan has no hand. Conditioning MiniMax-H3 on the plan adds one. The clips compare it with four video generators.</p>
         </div>
-        <figure class="sheet"><button type="button" aria-label="Enlarge Table 4"><img loading="lazy" src="assets/paper/tab4_gcp.png" width="962" height="836" alt="Table 4 of the paper: goal-conditioned planning results on Ego2Act, task and physical scores for short, long and all tasks, for Seedance-2.0, Kling-v3-Pro, Grok-1.5, Wan-2.7, Cosmos-3, MiniMax-H3 and VideoCoS."></button></figure>
+        <div data-viz="gcp" class="rv"></div>
       </div>
       <div class="gallery goal-in" data-gallery>
         <div class="tabs" role="group" aria-label="Planning case"></div>
@@ -220,14 +258,14 @@
       <p class="note">The baseline clips are the generations released with Ego2Act (seed 101); a clip shorter than 15 seconds holds its last frame. The Blender + MiniMax-H3 clips use the full MiniMax-H3 model.</p>
     </div>
 
-    <div class="group write">
-      <div class="group-head">
+    <div class="group write" id="res-fp">
+      <div class="group-head viz">
         <div class="txt">
           <span class="chip write">Write · future prediction</span>
           <h3><em>Simulate</em> forward from the last observed frame</h3>
           <p>Physics-IQ. The agent sets up rigid-body physics in the codified scene and simulates the next five seconds. <b>Its rigid trajectory error (11.1) is close to Cosmos3</b> (10.3 and 10.5) and well below MiniMax-H3 (16.1); on non-rigid motion and on the Physics-IQ score it trails.</p>
         </div>
-        <figure class="sheet"><button type="button" aria-label="Enlarge Table 5"><img loading="lazy" src="assets/paper/tab5_fp.png" width="962" height="720" alt="Table 5 of the paper: future prediction results on Physics-IQ, score and trajectory error for rigid and non-rigid motion, for Cosmos3-Super, Cosmos3-Nano, Physical Registry, MiniMax-H3 and VideoCoS."></button></figure>
+        <div data-viz="fp" class="rv"></div>
       </div>
       <div class="gallery" data-gallery>
         <div class="tabs" role="group" aria-label="Prediction case"></div>
@@ -242,34 +280,41 @@
 
 <section id="findings">
   <div class="wrap">
-    <div class="head">
+    <div class="head rv">
       <p class="eyebrow">Findings</p>
       <h2>When do executable world states help?</h2>
+      <p class="lead">Every task on one axis: how much the same model gains or loses once it works through an executable state. Switch the reasoner, hover for the raw numbers, click a bar to see its results.</p>
     </div>
+    <div class="helpwrap rv"><div data-viz="help"></div></div>
     <div class="fboxes">
-      <article class="fbox help">
+      <article class="fbox help glow tilt rv">
         <p class="fnum">Finding 1</p>
         <p class="fstate">Executable states <b>help</b> when a task is a direct geometric operation on 3D structure, such as changing the viewpoint or moving rigid objects.</p>
+        <a class="go" href="#res-nvs">Novel views and viewpoint questions</a>
       </article>
-      <article class="fbox short">
+      <article class="fbox short glow tilt rv d1">
         <p class="fnum">Finding 2</p>
         <p class="fstate">Executable states <b>fall short</b> when an answer combines several noisy state estimates or requires physical realism (hands, non-rigid dynamics, photorealism).</p>
+        <a class="go" href="#res-fp">Physics and plausibility</a>
       </article>
-      <article class="fbox care">
+      <article class="fbox care glow tilt rv d2">
         <p class="fnum">Finding 3</p>
         <p class="fstate">Executable states can beat video despite imperfect reconstruction, but error tolerance varies by task, and <b>a wrong state hurts more than a missing one</b>.</p>
+        <a class="go" href="#res-read">Reads from codified scenes</a>
       </article>
     </div>
-    <div class="sheets">
-      <figure class="sheet"><button type="button" aria-label="Enlarge Figure 7"><img loading="lazy" src="assets/paper/fig7_analysis.png" width="1994" height="816" alt="Figure 7 of the paper: analysis of reads from executable states, with accuracy against the number of objects, correlations between scene metrics and question accuracy, and accuracy against the scene's error."></button>
-        <figcaption>Figure 7. State errors compound across the estimates an answer combines; state accuracy, not visual similarity, predicts question accuracy; code input tolerates moderate error.</figcaption></figure>
+    <div class="xfig rv">
+      <span class="eyebrow">Figure 7 · interactive · analysis of reads from executable states</span>
+      <div id="fig7x"></div>
+      <p class="figcap">State errors compound across the estimates an answer combines; state accuracy, not visual similarity, predicts question accuracy; code input tolerates moderate error.</p>
+      <div class="figrow paper-f7"></div>
     </div>
   </div>
 </section>
 
 <section class="band cite" id="cite">
   <div class="wrap">
-    <div class="head">
+    <div class="head rv">
       <p class="eyebrow">Cite</p>
       <h2>BibTeX</h2>
     </div>
@@ -304,5 +349,8 @@
 <script defer src="assets/models/bathroom.meta.js"></script>
 <script defer src="assets/site.js"></script>
 <script defer src="assets/viewer.js"></script>
+<script defer src="assets/charts.js"></script>
+<script defer src="assets/figs.js"></script>
+<script defer src="assets/fx.js"></script>
 </body>
 </html>

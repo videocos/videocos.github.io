@@ -6,7 +6,7 @@
   if (!root) return;
   const $ = s => root.querySelector(s);
   const stage = $(".v-stage"), poster = $(".v-poster"), statusEl = $(".v-status"), hintEl = $(".v-hint");
-  const consolePre = $(".console pre"), consoleMode = $(".console .cbar span:last-child");
+  const consolePre = $(".console pre"), consoleMode = $(".console .cbar span:last-child"), consoleFile = $(".console .cbar span:first-child");
   const tagA = $(".v-tag.a"), tagB = $(".v-tag.b"), tagD = $(".v-tag.d");
   const srcTitle = $(".v-src b"), srcText = $(".v-src span");
   const timeWrap = $(".v-time"), slider = timeWrap.querySelector("input"), playBtn = timeWrap.querySelector("button"), timeOut = timeWrap.querySelector("output");
@@ -14,6 +14,7 @@
   const codeDetails = document.getElementById("scene-code"), codeName = codeDetails.querySelector("summary span"), codePre = codeDetails.querySelector("pre");
   const sceneBtns = [...root.querySelectorAll("[data-scene]")], modeBtns = [...root.querySelectorAll("[data-mode]")];
   const cbPath = $("#v-path"), cbCeil = $("#v-ceil"), cbSpin = $("#v-spin");
+  const askWrap = $(".ask-chips"), undoBtn = root.querySelector("[data-view=undo]");
   const hl = window.VCOS.hl;
   const SCENES = window.VCOS_SCENES || {};
   const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -21,6 +22,7 @@
   let walls = [], ceilings = [], center = null, home = null, pathMesh = null, marker = null, path = [];
   let onScreen = false, started = false, engaged = false, playing = false, frame = 1, mode = "inspect", lastTick = 0, shadowDirty = true;
   let selA = null, selB = null, boxA = null, boxB = null, line = null, loadToken = 0, lastSeek = 0, fly = null;
+  let objMap = new Map(), askBoxes = [], askRun = 0, drag = null, edits = new Map();
 
   const setStatus = t => { statusEl.textContent = t || ""; };
   const fmt = (v, d = 3) => (Math.abs(v) < 5e-4 ? 0 : v).toFixed(d);
@@ -95,6 +97,8 @@
     [pathMesh, marker, boxA, boxB, line].forEach(o => o && scene.remove(o));
     pathMesh = marker = boxA = boxB = line = null; selA = selB = null; mixer = null; clip = null;
     info = s; model = gltf.scene; scene.add(model);
+    clearAsk(); edits = new Map(); if (undoBtn) undoBtn.hidden = true; objMap = new Map();
+    model.traverse(o => { if (o.userData && o.userData.kind === "obj") { objMap.set(label(o), o); if (o.name) objMap.set(o.name, o); } });
     walls = []; ceilings = [];
     model.traverse(o => {
       if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; if (o.material) { o.material.side = T.FrontSide; if (o.material.vertexColors) o.material.color.setRGB(1, 1, 1); } }
@@ -133,7 +137,7 @@
       else { pip.hidden = true; pipVideo.removeAttribute("src"); }
     }
     codeName.textContent = s.code_name; codePre.innerHTML = hl(s.code);
-    setFrame(1); setMode(mode); cull(true); writeConsole();
+    setFrame(1); setMode(mode); cull(true); writeConsole(); buildAsk(s);
     controls.autoRotate = cbSpin.checked && !calm;
     poster.classList.add("gone"); setStatus(""); shadowDirty = true;
     try { delete window.VCOS_GLB[key]; } catch (e) {}
@@ -194,7 +198,10 @@
   function writeConsole() {
     const fr = frame > 1 ? `, frame=${frame}` : "";
     let text;
-    if (mode === "measure" && selA && selB) {
+    if (mode === "move" && selA) {
+      const c = box3(selA).getCenter(new T.Vector3()), b = blender(c).map(v => fmt(v, 2));
+      text = `# write: edit the state, then render it\nobj = S["${label(selA)}"]\nobj.location = (${b.join(", ")})   # m, Z up\nsubmit_update()\n→ ${edits.size} object${edits.size === 1 ? "" : "s"} moved in this state`;
+    } else if (mode === "measure" && selA && selB) {
       const a = box3(selA).getCenter(new T.Vector3()), b = box3(selB).getCenter(new T.Vector3());
       text = `measure_pair(a="${label(selA)}", b="${label(selB)}",\n             metric="center"${fr})\n→ distance_m  ${fmt(a.distanceTo(b))}\n  center_a    [${blender(a).map(v => fmt(v)).join(", ")}]\n  center_b    [${blender(b).map(v => fmt(v)).join(", ")}]`;
     } else if (selA) {
@@ -203,18 +210,22 @@
       if (mode === "measure") text += `\n\n# now click a second object`;
     } else {
       const n = info ? info.meta.objects.length : 0;
-      text = mode === "measure" ? `# ${n} objects are in this world state.\n# Click two of them to measure\n# the distance between their centers.` : `# ${n} objects are in this world state.\n# Click one to read its record.`;
+      text = mode === "measure" ? `# ${n} objects are in this world state.\n# Click two of them to measure\n# the distance between their centers.`
+        : mode === "move" ? `# write mode: drag any object across the floor.\n# The program's state changes; the agent\n# would render the new video from it.`
+        : `# ${n} objects are in this world state.\n# Click one to read its record,\n# or ask the state a question below.`;
     }
     consolePre.innerHTML = hl(text);
-    consoleMode.textContent = mode === "measure" ? "measure" : "inspect";
+    consoleMode.textContent = mode;
+    consoleFile.textContent = mode === "move" ? "generate.py" : "query.py";
   }
   function setMode(m) {
     mode = m; modeBtns.forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === m)));
-    select(null); writeConsole();
+    stage.classList.toggle("moving", m === "move");
+    askRun++; clearAsk(); select(null); writeConsole();
   }
   function helper(o, color) { const h = new T.Box3Helper(box3(o), color); h.material.depthTest = false; h.renderOrder = 5; scene.add(h); return h; }
   function select(o) {
-    if (o === null || mode === "inspect" || (selA && selB)) {
+    if (o === null || mode !== "measure" || (selA && selB)) {
       [boxA, boxB, line].forEach(x => x && scene.remove(x)); boxA = boxB = line = null; selA = selB = null;
     }
     if (!o) return;
@@ -258,6 +269,7 @@
     fly = {u: 0, t0: controls.target.clone(), t1: c, p0: camera.position.clone(), p1: to};
   }
   function overlays() {
+    for (const hb of askBoxes) if (hb._for) hb.box.setFromObject(hb._for);
     for (const [sel, bx, tag] of [[selA, boxA, tagA], [selB, boxB, tagB]]) {
       if (!sel) { tag.style.display = "none"; tag._for = null; continue; }
       bx.box.setFromObject(sel);
@@ -274,12 +286,40 @@
   function bind() {
     let down = null;
     const el = renderer.domElement;
-    el.addEventListener("pointerdown", e => { down = [e.clientX, e.clientY]; fly = null; engaged = true; controls.enableZoom = true; controls.autoRotate = false; cbSpin.checked = false; hintEl.textContent = HINT_ON; });
+    el.addEventListener("pointerdown", e => {
+      down = [e.clientX, e.clientY]; fly = null; engaged = true; controls.enableZoom = true; controls.autoRotate = false; cbSpin.checked = false; hintEl.textContent = HINT_ON;
+      if (mode === "move" && model && e.button === 0) {
+        const o = pick(e);
+        if (o) {
+          askRun++; clearAsk();
+          const bx = box3(o), plane = new T.Plane(new T.Vector3(0, 1, 0), -bx.min.y), hit = new T.Vector3();
+          raycaster.ray.intersectPlane(plane, hit);
+          const wp = o.getWorldPosition(new T.Vector3());
+          if (!edits.has(o)) edits.set(o, o.position.clone());
+          drag = {o, plane, off: wp.sub(hit)};
+          controls.enabled = false; el.setPointerCapture(e.pointerId);
+          select(o); stage.classList.add("dragging");
+        }
+      }
+    });
+    el.addEventListener("pointermove", e => {
+      if (!drag) return;
+      const r = el.getBoundingClientRect();
+      raycaster.setFromCamera(new T.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera);
+      const hit = new T.Vector3();
+      if (!raycaster.ray.intersectPlane(drag.plane, hit)) return;
+      const want = hit.add(drag.off), cur = drag.o.getWorldPosition(new T.Vector3());
+      want.y = cur.y;
+      drag.o.position.copy(drag.o.parent ? drag.o.parent.worldToLocal(want) : want);
+      drag.o.updateMatrixWorld(true); shadowDirty = true; writeConsole();
+    });
     el.addEventListener("pointerup", e => {
+      if (drag) { drag = null; controls.enabled = true; stage.classList.remove("dragging"); if (undoBtn) undoBtn.hidden = !edits.size; down = null; writeConsole(); return; }
       if (!down || !model) return;
       const moved = Math.hypot(e.clientX - down[0], e.clientY - down[1]); down = null;
       if (moved > 5) return;
       const o = pick(e);
+      askRun++; clearAsk();
       if (o) select(o); else { select(null); writeConsole(); }
     });
     el.addEventListener("dblclick", e => {                 /* the two clicks have selected it; now go to it */
@@ -300,6 +340,10 @@
     root.querySelector("[data-view=reset]").addEventListener("click", () => { camera.position.copy(home); controls.target.copy(center); });
     root.querySelector("[data-view=top]").addEventListener("click", () => { const d = camera.position.distanceTo(controls.target); camera.position.set(center.x, center.y + d, center.z + 0.01); controls.target.copy(center); });
     root.querySelector("[data-view=in]").addEventListener("click", () => dolly(0.8));
+    if (undoBtn) undoBtn.addEventListener("click", () => {
+      for (const [o, p] of edits) { o.position.copy(p); o.updateMatrixWorld(true); }
+      edits = new Map(); undoBtn.hidden = true; shadowDirty = true; select(null); writeConsole();
+    });
     root.querySelector("[data-view=out]").addEventListener("click", () => dolly(1.25));
   }
   function dolly(f) {
@@ -307,6 +351,107 @@
     if (d < controls.minDistance || d > controls.maxDistance) return;
     camera.position.copy(controls.target).add(v.multiplyScalar(f));
   }
+  /* ---- ask the state: questions written from this scene's own records, answered by the harness tools ---- */
+  const SKIP = /wall|floor|ceiling|door|window|switch|outlet|cable|paper|magnet|sticky|note|fixture|^light$|hook|part of|pipe|blind|poster|artwork|sign|vent|rug|curtain|frame|shelf|cabinets and/i;
+  const plural = c => /(s|x|ch|sh)$/.test(c) ? c + "es" : /[^aeiou]y$/.test(c) ? c.slice(0, -1) + "ies" : /f$/.test(c) ? c.slice(0, -1) + "ves" : c + "s";
+  const nice = o => (o.category || "object").replace(/_/g, " ");
+  function clearAsk() { askBoxes.forEach(b => scene && scene.remove(b)); askBoxes = []; [...(askWrap ? askWrap.children : [])].forEach(b => b.classList.remove("on")); }
+  function questions(s) {
+    const recs = s.meta.objects.filter(o => objMap.has(o.name) && o.size && !SKIP.test(o.category || "") && !SKIP.test(o.name));
+    const vol = o => o.size[0] * o.size[1] * o.size[2];
+    const qs = [];
+    /* entity: count the most frequent category */
+    const byCat = {};
+    for (const o of recs) (byCat[o.category] = byCat[o.category] || []).push(o);
+    const cat = Object.keys(byCat).filter(k => byCat[k].length >= 2 && byCat[k].length <= 40).sort((a, b) => byCat[b].length - byCat[a].length)[0];
+    if (cat) qs.push({kind: "Entity", q: `How many ${plural(cat)} are in the room?`, run: () => ({objs: byCat[cat], code: [`scene_inventory(category="${cat}")`, `→ ${byCat[cat].length} entities`, `submit_answer(${byCat[cat].length})`]})});
+    /* geometry: distance between the two biggest things of different kinds */
+    const big = recs.slice().sort((a, b) => vol(b) - vol(a)), uniq = [];
+    for (const o of big) if (!uniq.some(u => u.category === o.category)) uniq.push(o);
+    if (uniq.length >= 2) {
+      const [a, b] = uniq;
+      qs.push({kind: "Geometry", q: `How far is the ${nice(a)} from the ${nice(b)}?`, run: () => {
+        const A = objMap.get(a.name), B = objMap.get(b.name), d = box3(A).getCenter(new T.Vector3()).distanceTo(box3(B).getCenter(new T.Vector3()));
+        return {objs: [a, b], line: [A, B], code: [`inspect_entities(ids=["${a.name}", "${b.name}"])`, `d = measure_pair(a="${a.name}", b="${b.name}", metric="center")`, `→ distance_m  ${fmt(d, 2)}`, `submit_answer(${fmt(d, 2)})`]};
+      }});
+      qs.push({kind: "Geometry", q: `What is the largest object here?`, run: () => {
+        const sz = a.size;
+        return {objs: [a], focus: true, code: [`scene_inventory()`, `inspect_entities(ids=[...${recs.length} objects])`, `→ largest: "${a.name}"  ${fmt(sz[0], 2)} × ${fmt(sz[2], 2)} × ${fmt(sz[1], 2)} m`, `submit_answer("${nice(a)}")`]};
+      }});
+    }
+    /* viewpoint: stand at one object, face another, where is a third? */
+    if (uniq.length >= 3) {
+      const [a, b, c] = [uniq[1], uniq[0], uniq[2]];
+      qs.push({kind: "Viewpoint", q: `Standing by the ${nice(a)}, facing the ${nice(b)}: is the ${nice(c)} to my left or right?`, run: () => {
+        const P = n => box3(objMap.get(n.name)).getCenter(new T.Vector3());
+        const pa = P(a), pb = P(b), pc = P(c), fx = pb.x - pa.x, fz = pb.z - pa.z, tx = pc.x - pa.x, tz = pc.z - pa.z;
+        const side = (tx * -fz + tz * fx) > 0 ? "right" : "left";
+        return {objs: [a, b, c], line: [objMap.get(a.name), objMap.get(b.name)], code: [`viewpoint_relation(observer="${a.name}",`, `                   facing="${b.name}",`, `                   target="${c.name}")`, `→ ${side}`, `submit_answer("${side}")`]};
+      }});
+    }
+    /* history: which did the camera see first (only scenes with first-seen frames) */
+    const seen = recs.filter(o => typeof o.first === "number");
+    if (seen.length > 4) {
+      const pool = seen.filter(o => vol(o) > 0.02).sort((a, b) => vol(b) - vol(a)).slice(0, 12);
+      const a = pool[0], b = pool.find(o => o.category !== a.category && Math.abs(o.first - a.first) > 60);
+      if (a && b) qs.push({kind: "History", q: `Which did the camera see first: the ${nice(a)} or the ${nice(b)}?`, run: () => {
+        const first = a.first < b.first ? a : b;
+        setFrame(first.first);
+        return {objs: [a, b], code: [`camera_history(ids=["${a.name}", "${b.name}"])`, `→ first seen  ${a.name}: frame ${a.first}`, `              ${b.name}: frame ${b.first}`, `submit_answer("${nice(first)}")`]};
+      }});
+    }
+    return qs;
+  }
+  function buildAsk(s) {
+    if (!askWrap) return;
+    askWrap.textContent = "";
+    for (const q of questions(s)) {
+      const b = document.createElement("button"); b.type = "button";
+      const k = document.createElement("i"); k.textContent = q.kind; b.append(k, document.createTextNode(q.q));
+      b.addEventListener("click", () => ask(q, b)); askWrap.appendChild(b);
+    }
+  }
+  function ask(q, btn) {
+    if (mode !== "inspect") setMode("inspect");
+    select(null); clearAsk(); btn.classList.add("on");
+    const run = ++askRun, res = q.run(), lines = [`# Q: ${q.q}`].concat(res.code);
+    controls.autoRotate = false; cbSpin.checked = false;
+    /* frame the objects the question touches */
+    const all = new T.Box3();
+    res.objs.forEach(r => { const o = objMap.get(r.name); if (o) all.union(box3(o)); });
+    if (!all.isEmpty()) {
+      const c = all.getCenter(new T.Vector3()), size = all.getSize(new T.Vector3()).length();
+      const dir = camera.position.clone().sub(controls.target).normalize();
+      const dist = Math.max(controls.minDistance * 1.4, Math.min(controls.maxDistance, size * 1.25 + 1.4));
+      const to = c.clone().add(dir.multiplyScalar(dist));
+      if (calm) { controls.target.copy(c); camera.position.copy(to); } else fly = {u: 0, t0: controls.target.clone(), t1: c, p0: camera.position.clone(), p1: to};
+    }
+    let shown = 0, chars = 0;
+    const full = lines.join("\n"), answerAt = full.lastIndexOf("submit_answer");
+    const step = () => {
+      if (run !== askRun) return;
+      chars = Math.min(full.length, chars + (calm ? full.length : 3));
+      consolePre.innerHTML = hl(full.slice(0, chars)) + (chars < full.length ? '<span class="caret"></span>' : "");
+      consoleMode.textContent = "agent";
+      /* light the objects as the tool calls that touch them are typed */
+      if (shown === 0 && chars > lines[0].length + 4) {
+        shown = 1;
+        res.objs.forEach((r, i) => setTimeout(() => {
+          if (run !== askRun) return;
+          const o = objMap.get(r.name); if (!o) return;
+          const hb = helper(o, i === 0 || res.objs.length > 3 ? 0xff8a1f : i === 1 ? 0x3d63ff : 0x10b981); hb._for = o; askBoxes.push(hb);
+        }, calm ? 0 : Math.min(60, 900 / res.objs.length) * i));
+        if (res.line) {
+          const g = new T.BufferGeometry().setFromPoints(res.line.map(o => box3(o).getCenter(new T.Vector3())));
+          const ln = new T.Line(g, new T.LineBasicMaterial({color: 0xff8a1f, depthTest: false})); ln.renderOrder = 6; scene.add(ln); askBoxes.push(ln);
+        }
+        if (res.focus && res.objs[0]) { const o = objMap.get(res.objs[0].name); if (o) { selA = o; boxA = helper(o, 0x3d63ff); } }
+      }
+      if (chars < full.length) setTimeout(step, 16);
+    };
+    step();
+  }
+
   const HINT_OFF = "Drag to orbit · click the scene, then scroll to zoom · click an object to inspect it · double-click to fly to it";
   const HINT_ON = "Scroll to zoom · drag to orbit · right-drag to pan · click an object to inspect it · double-click to fly to it";
   hintEl.textContent = HINT_OFF;

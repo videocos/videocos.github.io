@@ -3,7 +3,7 @@
 (function () {
   "use strict";
   const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  const FN = "scene_inventory|inspect_entities|measure_pair|viewpoint_relation|track_motion|camera_history|submit_answer|submit_update|run_python|S\\.\\w+|A\\.\\w+|box|prism|pierced_wall|build_object|animate";
+  const FN = "scene_inventory|inspect_entities|measure_pair|viewpoint_relation|track_motion|camera_history|submit_answer|submit_update|run_python|set_pose|simulate|load_evidence|S\\.\\w+|A\\.\\w+|box|prism|pierced_wall|build_object|animate";
   const RE = new RegExp(`(#.*$)|("(?:[^"\\\\\\n]|\\\\.)*"|'(?:[^'\\\\\\n]|\\\\.)*')|\\b(for|in|if|else|elif|def|return|import|from|as|lambda|not|and|or|None|True|False)\\b|\\b(${FN})\\b|(?<![\\w.])(-?\\d+\\.?\\d*|\\.\\d+)\\b`, "gm");
   const hl = src => esc(src).replace(RE, (m, c, s, k, f, n) =>
     c ? `<i class="c">${c}</i>` : s ? `<i class="s">${s}</i>` : k ? `<i class="k">${k}</i>` : f ? `<i class="f">${f}</i>` : `<i class="n">${n}</i>`);
