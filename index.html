@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VideoCoS: When Do Executable World States Help Video Reasoning and Generation?</title>
+<meta name="description" content="VideoCoS codifies a video once into an executable Blender program that an agent can query, edit and simulate. Project page with a one-minute film, interactive scenes, results against baselines, and the findings.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="VideoCoS: When Do Executable World States Help Video Reasoning and Generation?">
+<meta property="og:description" content="VideoCoS codifies a video once into an executable Blender program that an agent can query, edit and simulate.">
+<meta property="og:url" content="https://videocos.github.io/">
+<meta property="og:image" content="https://videocos.github.io/assets/video/videocos_demo_poster.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231F4BFF'/%3E%3Cpath d='M16 18h9.5L32 39.5 38.5 18H48L37 47H27z' fill='white'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:wght@400..600&family=Google+Sans+Flex:opsz,wdth,wght@6..144,25..151,1..1000&display=swap">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+
+<header class="bar">
+  <div class="wrap">
+    <a class="mark wordmark" href="#top">Video<b>CoS</b></a>
+    <nav aria-label="Sections">
+      <a href="#idea">Idea</a><a href="#explore">Explore</a><a href="#results">Results</a><a href="#findings">Findings</a><a href="#cite">Cite</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+
+<section class="hero">
+  <div class="wrap">
+    <h1><span class="wordmark">Video<b>CoS</b></span><span class="sub">When Do Executable World States Help Video Reasoning and Generation?</span></h1>
+    <p class="authors">
+          <a href="https://yui010206.github.io/">Shoubin Yu*</a><a href="https://daeunni.github.io/">Daeun Lee*</a><a href="https://zunwang1.github.io/">Zun Wang</a><a href="https://hl-hanlin.github.io/">Han Lin</a><a href="https://zhangyuejoslin.github.io/">Yue Zhang</a><a href="https://www.cs.unc.edu/~mbansal/">Mohit Bansal</a>
+        </p>
+    <p class="aff"><img src="assets/img/unc_logo.svg" width="193" height="60" alt="The University of North Carolina at Chapel Hill"><span>* equal contribution</span></p>
+    <div class="links">
+          <a class="btn primary" href="https://github.com/Yui010206/VideoCoS-code">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M5.2 4.2 1.4 8l3.8 3.8 1-1L3.5 8l2.7-2.8zM10.8 4.2l-1 1L12.5 8l-2.7 2.8 1 1L14.6 8z"/></svg>Code</a>
+          <a class="btn" href="https://huggingface.co/datasets/Shoubin/VideoCoS-demo">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.4" d="M2.5 4c0-1 2.5-1.8 5.5-1.8S13.5 3 13.5 4s-2.5 1.8-5.5 1.8S2.5 5 2.5 4zm0 0v8c0 1 2.5 1.8 5.5 1.8s5.5-.8 5.5-1.8V4M2.5 8c0 1 2.5 1.8 5.5 1.8S13.5 9 13.5 8"/></svg>Demo data</a>
+          <span class="btn soon" title="The arXiv link will be added at release">Paper · arXiv soon</span>
+        </div>
+    <figure class="film" id="film">
+      <video controls playsinline preload="metadata" poster="assets/video/videocos_demo_poster.jpg" src="assets/video/videocos_demo_720p.mp4"></video>
+      <figcaption>The idea in one minute. Every query, edit and simulation in the film was executed on this scene through the released reasoning harness; the scene’s perception is the dataset’s ground-truth annotation.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="band" id="idea">
+  <div class="wrap">
+    <div class="head">
+      <p class="eyebrow">Formulation</p>
+      <h2>Reasoning is a <em class="t-read">read</em>, generation is a <em class="t-write">write</em>,<br>over the <em class="t-state">executable world states</em>.</h2>
+      <p class="lead">Video reasoning and generation both depend on the underlying world state: which entities exist, where they are, and how they and the camera move. VideoCoS makes that state explicit as an executable Blender program, built once per video, and asks when this helps.</p>
+    </div>
+    <div class="trio">
+      <div><span class="chip state">Codify</span><p>A perception-grounded coding agent reconstructs a reusable scene program from raw video. It reads depth, camera poses, tracks and 3D boxes, then loops: write code, execute it, check and render, repair.</p></div>
+      <div><span class="chip read">Read</span><p>A separate reasoning agent works from the program alone. It answers with state queries: find objects, measure them, take an imagined viewpoint, replay the camera’s history.</p></div>
+      <div><span class="chip write">Write</span><p>The same agent edits the state and renders it: a new camera for novel-view synthesis, new object poses for goal-conditioned planning, forward simulation for future prediction.</p></div>
+    </div>
+    <div class="sheets">
+      <figure class="sheet">
+        <button type="button" aria-label="Enlarge Figure 1"><img loading="lazy" src="assets/paper/fig1_teaser.png" width="2000" height="752" alt="Figure 1 of the paper. Left: a latent-space state inside video-language and video diffusion models, against an executable world state built by video codification, which is queried by query.py and edited by generate.py. Right: a radar chart of gains and losses across read and write tasks."></button>
+        <figcaption>Figure 1. Left: unlike models with implicit, entangled latents, VideoCoS codifies a video once into an executable program, an explicit, factorized and persistent state that an agent queries to answer questions, or edits and simulates to render new videos. Right: performance relative to the same base model without an executable state.</figcaption>
+      </figure>
+      <figure class="sheet">
+        <button type="button" aria-label="Enlarge Figure 3"><img loading="lazy" src="assets/paper/fig3_method.png" width="2000" height="1361" alt="Figure 3 of the paper: video perception extraction feeds read-only evidence files to a coding agent that looks at evidence, writes code, executes it in a sandboxed Blender and checks the render; the resulting executable world state is read and written by a reasoning agent through a tool set."></button>
+        <figcaption>Figure 3. The codification agent turns perception evidence into an executable scene program through a loop of building, checking and rendering. The reasoning agent then reads this scene to answer questions, or edits and simulates it to generate videos. It receives only text feedback from tools and never sees the frames.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section id="explore">
+  <div class="wrap">
+    <div class="head">
+      <p class="eyebrow">Interactive</p>
+      <h2>Open a world state</h2>
+      <p class="lead">Each scene below is an executable world state, exported from its Blender file. Four things to try:</p>
+    </div>
+    <ul class="howto">
+      <li><b><span class="key">Drag</span>Look around</b>Drag to turn the scene. Click it once, then scroll to zoom; right-drag to pan.</li>
+      <li><b><span class="key">Click</span>Inspect an object</b>Click any object to read its record: category, position and size, as a reasoning agent reads them. Double-click to fly to it.</li>
+      <li><b><span class="key">Measure</span>Measure a distance</b>Switch the tool to Measure, then click two objects to get the distance between them.</li>
+      <li><b><span class="key">Play</span>Replay the video</b>Press play under the scene: the input video runs beside it while the camera retraces its path. In the film scene the objects move too.</li>
+    </ul>
+    <div class="viewer" id="viewer" data-first="apartment">
+      <div class="tabs" role="group" aria-label="Scene">
+        <button type="button" data-scene="apartment" aria-pressed="true">Film scene</button>
+        <button type="button" data-scene="kitchen" aria-pressed="false">Kitchen</button>
+        <button type="button" data-scene="bedroom" aria-pressed="false">Bedroom</button>
+        <button type="button" data-scene="classroom" aria-pressed="false">Classroom</button>
+        <button type="button" data-scene="bathroom" aria-pressed="false">Bathroom</button>
+      </div>
+      <div class="v-main">
+        <div class="v-stage">
+          <div class="v-poster"><img src="assets/img/apartment_900.webp" width="900" height="707" alt=""></div>
+          <div class="v-status" role="status" aria-live="polite"></div>
+          <div class="v-tag a"></div><div class="v-tag b"></div><div class="v-tag d"></div>
+          <div class="v-hint"></div>
+          <figure class="v-pip" hidden><video muted playsinline preload="metadata" aria-label="The input video of this scene"></video><figcaption>Input video</figcaption></figure>
+        </div>
+        <div class="v-time">
+          <button type="button" aria-label="Play the timeline"></button>
+          <input type="range" min="1" max="100" value="1" step="1" aria-label="Video frame">
+          <output>frame 0001</output>
+        </div>
+      </div>
+      <div class="v-panel">
+        <div class="v-src"><b>Aria Digital Twin, sequence 131</b><span>Loads when this section scrolls into view.</span></div>
+        <div class="seg" role="group" aria-label="Tool">
+          <button type="button" data-mode="inspect" aria-pressed="true">Inspect</button>
+          <button type="button" data-mode="measure" aria-pressed="false">Measure</button>
+        </div>
+        <div class="console">
+          <div class="cbar"><span>query.py</span><span>inspect</span></div>
+          <pre class="mono" aria-live="polite"># Click an object to read its record.</pre>
+        </div>
+        <div class="v-toggles">
+          <label><input type="checkbox" id="v-path" checked>Camera path</label>
+          <label><input type="checkbox" id="v-ceil">Ceiling</label>
+          <label><input type="checkbox" id="v-spin" checked>Turn slowly</label>
+        </div>
+        <div class="links" style="margin:0">
+          <button type="button" class="btn small" data-view="reset">Reset view</button>
+          <button type="button" class="btn small" data-view="top">Top</button>
+          <button type="button" class="btn small" data-view="in" aria-label="Zoom in">+</button>
+          <button type="button" class="btn small" data-view="out" aria-label="Zoom out">−</button>
+        </div>
+      </div>
+    </div>
+    <details class="code" id="scene-code">
+      <summary><span>scene.py</span>the program behind this scene</summary>
+      <pre class="mono"></pre>
+    </details>
+    <p class="note" style="margin-top:16px;max-width:96ch">The kitchen, bedroom, classroom and bathroom were codified by VideoCoS from raw video (rooms of VSI-Bench); their meshes are thinned for the web. The console values are computed in your browser from each object’s world-space bounds, the quantity the harness tools <span class="mono">inspect_entities</span> and <span class="mono">measure_pair(metric="center")</span> report: metres, Blender axes, Z up. Outer walls between you and the room are hidden.</p>
+  </div>
+</section>
+
+<section class="band" id="results">
+  <div class="wrap">
+    <div class="head">
+      <p class="eyebrow">Results</p>
+      <h2>Evaluation on four <em class="t-read">read</em> tasks and three <em class="t-write">write</em> tasks</h2>
+      <p class="lead">Each task family probes a different component of the state: its entities, their geometry over time, or the camera. Benchmarks ship no ground-truth scene programs, so every state below was inferred from raw video.</p>
+    </div>
+    <figure class="sheet">
+      <button type="button" aria-label="Enlarge Table 1"><img loading="lazy" src="assets/paper/tab1_tasks.png" width="1992" height="492" alt="Table 1 of the paper: the seven task families. Read: entity, geometric, viewpoint and history querying on VSI-Bench-Debiased with 251, 1297, 496 and 318 samples. Write: novel-view synthesis on Kubric-4D with 300, goal-conditioned planning on Ego2Act with 110, future prediction on Physics-IQ with 66."></button>
+    </figure>
+
+    <div class="group read">
+      <div class="group-head">
+        <div class="txt">
+          <span class="chip read">Read · entity, geometric, viewpoint, history querying</span>
+          <h3>A video becomes an executable world state the agent can <em>query</em></h3>
+          <p>VSI-Bench-Debiased. The same reasoner answers from the video, or from a codified scene alone. <b>Viewpoint questions gain most</b>, by 21.9 and 17.5 points for GPT and Gemini; history questions lose for every reasoner.</p>
+          <p>Below, each room’s raw video beside three codified scenes of it: two from the agents of BVB, one from VideoCoS, each rendered through its own estimated camera.</p>
+        </div>
+        <figure class="sheet"><button type="button" aria-label="Enlarge Table 2"><img loading="lazy" src="assets/paper/tab2_read.png" width="962" height="728" alt="Table 2 of the paper: state querying results on VSI-Bench-Debiased for three reasoners, with video input, with code input from BVB scenes, and with code input from VideoCoS scenes."></button></figure>
+      </div>
+      <div class="gallery" data-gallery>
+        <div class="tabs" role="group" aria-label="Room"></div>
+        <div class="mosaic" style="--cols:4;--rows:1;--ar:1536/288"><video preload="none"></video><div class="labels"><div><span class="tag ref">Raw video</span></div><div><span class="tag">BVB · GPT-6 Astra</span></div><div><span class="tag">BVB · GPT-6.1 Terra</span></div><div><span class="tag ours">VideoCoS</span></div></div></div>
+        <p class="cap"><b></b><span></span></p>
+        <script type="application/json">[{"t": "Kitchen", "f": "vsi_45663164", "k": "Kitchen.", "x": " ARKitScenes, 110 s. On this room's 8 questions Gemini-3.8 Flash scores 95.0 from the VideoCoS scene and 81.3 from each BVB scene."}, {"t": "Classroom", "f": "vsi_21d970d8de", "k": "Classroom.", "x": " ScanNet++, 152 s. On this room's 17 questions Gemini-3.8 Flash scores 94.1 from the VideoCoS scene and 88.2 and 71.2 from the BVB scenes (Astra, Terra)."}, {"t": "Bedroom", "f": "vsi_c49a8c6cff", "k": "Bedroom.", "x": " ScanNet++, 89 s. On this room's 18 questions Gemini-3.8 Flash scores 75.6 from the VideoCoS scene and 64.4 from each BVB scene."}, {"t": "Lounge", "f": "vsi_scene0593_00", "k": "Lounge.", "x": " ScanNet, 96 s. On this room's 25 questions Gemini-3.8 Flash scores 58.0 from the VideoCoS scene and 37.2 and 46.0 from the BVB scenes (Astra, Terra)."}, {"t": "Bathroom", "f": "vsi_scene0693_00", "k": "Bathroom.", "x": " ScanNet, 72 s. On this room's 14 questions Gemini-3.8 Flash scores 87.1 from the VideoCoS scene and 51.4 and 66.4 from the BVB scenes (Astra, Terra)."}]</script>
+      </div>
+      <p class="note">Clips run at twice real time. These five rooms were chosen among those where the VideoCoS scene answers more questions. BVB’s scenes often look cleaner; VideoCoS follows the camera pose and the object layout of the video more closely.</p>
+    </div>
+
+    <div class="group write">
+      <div class="group-head">
+        <div class="txt">
+          <span class="chip write">Write · novel-view synthesis</span>
+          <h3>Change the <em>camera</em>, keep the scene</h3>
+          <p>Kubric-4D. The agent writes only the camera, and Blender renders the same scene again. <b>VideoCoS leads on both metrics at every camera shift</b>, and its object mIoU stays at 0.224 to 0.254 from 42° to 128°.</p>
+        </div>
+        <figure class="sheet"><button type="button" aria-label="Enlarge Table 3"><img loading="lazy" src="assets/paper/tab3_nvs.png" width="962" height="584" alt="Table 3 of the paper: novel-view synthesis results on Kubric-4D at low, medium and high view change."></button></figure>
+      </div>
+      <div class="ex">
+        <div class="strip five" style="--n:5;--ar:3/2">
+          <figure class="pane"><video preload="none" poster="assets/results/t5_scn02912_input.jpg" src="assets/results/t5_scn02912_input.mp4"></video><figcaption>Input view</figcaption></figure>
+          <figure class="pane"><video preload="none" poster="assets/results/t5_scn02912_cognvs.jpg" src="assets/results/t5_scn02912_cognvs.mp4"></video><figcaption>CogNVS</figcaption></figure>
+          <figure class="pane"><video preload="none" poster="assets/results/t5_scn02912_recammaster.jpg" src="assets/results/t5_scn02912_recammaster.mp4"></video><figcaption>ReCamMaster</figcaption></figure>
+          <figure class="pane ours"><video preload="none" poster="assets/results/t5_scn02912_ours.jpg" src="assets/results/t5_scn02912_ours.mp4"></video><figcaption>VideoCoS</figcaption></figure>
+          <figure class="pane"><video preload="none" poster="assets/results/t5_scn02912_target.jpg" src="assets/results/t5_scn02912_target.mp4"></video><figcaption>Target view (truth)</figcaption></figure>
+        </div>
+      </div>
+      <div class="ex">
+        <div class="strip five" style="--n:5;--ar:3/2">
+          <figure class="pane"><video preload="none" poster="assets/results/t5_scn02924_input.jpg" src="assets/results/t5_scn02924_input.mp4"></video><figcaption>Input view</figcaption></figure>
+          <figure class="pane"><video preload="none" poster="assets/results/t5_scn02924_cognvs.jpg" src="assets/results/t5_scn02924_cognvs.mp4"></video><figcaption>CogNVS</figcaption></figure>
+          <figure class="pane"><video preload="none" poster="assets/results/t5_scn02924_recammaster.jpg" src="assets/results/t5_scn02924_recammaster.mp4"></video><figcaption>ReCamMaster</figcaption></figure>
+          <figure class="pane ours"><video preload="none" poster="assets/results/t5_scn02924_ours.jpg" src="assets/results/t5_scn02924_ours.mp4"></video><figcaption>VideoCoS</figcaption></figure>
+          <figure class="pane"><video preload="none" poster="assets/results/t5_scn02924_target.jpg" src="assets/results/t5_scn02924_target.mp4"></video><figcaption>Target view (truth)</figcaption></figure>
+        </div>
+      </div>
+    </div>
+
+    <div class="group write">
+      <div class="group-head">
+        <div class="txt">
+          <span class="chip write">Write · goal-conditioned planning</span>
+          <h3>Plan the <em>motion</em> in the state, then render it</h3>
+          <p>Ego2Act. From one start photo and a goal, the agent keyframes rigid object motion in Blender. <b>Rendered in Blender, VideoCoS has the second-highest task score</b> after Seedance-2.0, and the lowest physical score: the plan has no hand. Conditioning MiniMax-H3 on the plan adds one. The clips compare it with four video generators.</p>
+        </div>
+        <figure class="sheet"><button type="button" aria-label="Enlarge Table 4"><img loading="lazy" src="assets/paper/tab4_gcp.png" width="962" height="836" alt="Table 4 of the paper: goal-conditioned planning results on Ego2Act, task and physical scores for short, long and all tasks, for Seedance-2.0, Kling-v3-Pro, Grok-1.5, Wan-2.7, Cosmos-3, MiniMax-H3 and VideoCoS."></button></figure>
+      </div>
+      <div class="gallery goal-in" data-gallery>
+        <div class="tabs" role="group" aria-label="Planning case"></div>
+        <div class="mosaic" style="--cols:4;--rows:2;--ar:1280/360"><video preload="none"></video><div class="labels"><div><span class="tag ref">Start photo</span></div><div><span class="tag ours"><i>VideoCoS · </i>Blender</span></div><div><span class="tag ours"><i>VideoCoS · </i>Blender + MiniMax-H3</span></div><div><span class="tag">MiniMax-H3</span></div><div><span class="tag">Seedance-2.0</span></div><div><span class="tag">Grok-1.5</span></div><div><span class="tag">Wan-2.7</span></div><div class="goal"><b>Goal</b><span></span></div></div></div>
+        <p class="cap"><b></b><span></span></p>
+        <script type="application/json">[{"t": "Remote, marker, stand", "f": "t6_remote_marker_stand", "k": "Goal.", "x": " The marker is inside the red stationery case, the white AC remote is inside the standing remote holder, and the green notebook is on the laptop stand.", "blank": []}, {"t": "Controller, watch, ring", "f": "t6_controller_watch_ring", "k": "Goal.", "x": " Closed aqua green container with all items placed on top and arranged from largest to smallest, from left to right.", "blank": []}, {"t": "Sort the hats", "f": "t6_hat_sorting", "k": "Goal.", "x": " Black, white, and green hats placed on the hooks from left to right in that order, with the rightmost hook empty.", "blank": []}, {"t": "Open the laptop", "f": "t6_laptop_open", "k": "Goal.", "x": " Laptop lid open, with the key and pen placed together on the left side of the laptop.", "blank": []}, {"t": "Stack the dishes", "f": "t6_stack_dishes_utensils", "k": "Goal.", "x": " Visible kitchen items are stacked into big to small configuration from bottom to top, with the knife and fork inside the bowl.", "blank": []}, {"t": "Jar and sachet", "f": "t6_pantry_jar_sachet", "k": "Goal.", "x": " Spice jar closed with its yellow lid and moved to be standing next to the cocoa canister, with the tea sachet inside the teal mug and the ginger tea box positioned to the left of the mug.", "blank": []}, {"t": "Toast in the microwave", "f": "t6_lava_toast_microwave", "k": "Goal.", "x": " The lava toast is placed on the plate with the chocolate on top, and both are inside the microwave.", "blank": []}]</script>
+      </div>
+      <p class="note">The baseline clips are the generations released with Ego2Act (seed 101); a clip shorter than 15 seconds holds its last frame. The Blender + MiniMax-H3 clips use the full MiniMax-H3 model.</p>
+    </div>
+
+    <div class="group write">
+      <div class="group-head">
+        <div class="txt">
+          <span class="chip write">Write · future prediction</span>
+          <h3><em>Simulate</em> forward from the last observed frame</h3>
+          <p>Physics-IQ. The agent sets up rigid-body physics in the codified scene and simulates the next five seconds. <b>Its rigid trajectory error (11.1) is close to Cosmos3</b> (10.3 and 10.5) and well below MiniMax-H3 (16.1); on non-rigid motion and on the Physics-IQ score it trails.</p>
+        </div>
+        <figure class="sheet"><button type="button" aria-label="Enlarge Table 5"><img loading="lazy" src="assets/paper/tab5_fp.png" width="962" height="720" alt="Table 5 of the paper: future prediction results on Physics-IQ, score and trajectory error for rigid and non-rigid motion, for Cosmos3-Super, Cosmos3-Nano, Physical Registry, MiniMax-H3 and VideoCoS."></button></figure>
+      </div>
+      <div class="gallery" data-gallery>
+        <div class="tabs" role="group" aria-label="Prediction case"></div>
+        <div class="mosaic" style="--cols:4;--rows:2;--ar:1280/360"><video preload="none"></video><div class="labels"><div><span class="tag ref">Real future</span></div><div><span class="tag ours"><i>VideoCoS · </i>Blender</span></div><div><span class="tag ours"><i>VideoCoS · </i>Blender + MiniMax-H3</span></div><div><span class="tag">MiniMax-H3</span></div><div><span class="tag">Cosmos3-Super</span></div><div><span class="tag">Cosmos3-Nano</span></div><div><span class="tag">Physical Registry</span></div><div><span class="tag ref">Last observed frame</span></div></div></div>
+        <p class="cap"><b></b><span></span></p>
+        <script type="application/json">[{"t": "Ball hits duck", "f": "t7_0009_right_ball-hits-duck", "k": "", "x": "A light beige coffee table with a small yellow rubber duck on it. A mustard yellow couch is in the background. There is a black pipe that points from the left side to the right side of the table. The brown tennis ball rolls straight out of the black pipe and hits the rubber duck."}, {"t": "Ball on a ramp", "f": "t7_0019_left_ball-ramp", "k": "", "x": "A simple ramp made of cardboard, propped up by a blue block on a light-colored wooden table. There's a black pipe to the left of the frame that directly points towards it. The yellow tennis ball rolls straight out of the black pipe onto the ramp."}, {"t": "Balls collide", "f": "t7_0031_left_balls-collide", "k": "", "x": "A light-colored wooden tabletop with two pipes at the edges. The blue and the yellow tennis ball roll out of the pipes and collide with the same speed."}, {"t": "Ball in a crate", "f": "t7_0013_left_ball-in-basket", "k": "", "x": "The black plastic crate sits on a wooden table. The orange inflatable basketball is released over the black plastic crate."}, {"t": "Ball rolls off", "f": "t7_0024_right_ball-rolls-off", "k": "", "x": "A light wood coffee table in the foreground with a black pipe on the left end of the table. The grey tennis ball rolls out of the pipe over the entire table towards the right."}, {"t": "Ball on glass", "f": "t7_0027_right_ball-rolls-on-glass", "k": "", "x": "A piece of clear glass resting on the edge of a light-colored wooden table against a plain white wall. The blue tennis ball rolls from the wooden table over the glass."}, {"t": "Roll behind", "f": "t7_0146_center_roll-behind-box", "k": "", "x": "A small white lampshade is on a light wooden table and a black tube points from the left side to the right side. The grey tennis ball rolls from the left straight out of the black tube over the entire table."}, {"t": "Roll in front", "f": "t7_0149_center_roll-front-box", "k": "", "x": "A small white lampshade is on a light wooden table and a black tube points from the left side to the right side. The brown tennis ball rolls from the left straight out of the black tube over the entire table."}, {"t": "Unstable stack", "f": "t7_0182_center_unstable-block-stack", "k": "", "x": "The yellow block is balanced on the red block, forming an L shape. The blue wooden block is placed by the orange-black grabber tool atop the yellow block."}, {"t": "Weight on a mug", "f": "t7_0188_center_weight-on-ceramic", "k": "", "x": "The yellow ceramic mug is on a wooden table. The 30lb kettlebell is placed on top of the yellow ceramic mug."}, {"t": "Cut a tangerine", "f": "t7_0042_right_cut-orange", "k": "", "x": "One half of a tangerine has been placed on a glass cutting board. The knife slices through the tangerine."}, {"t": "Box over a ball", "f": "t7_0098_center_magnet-transparent-peakaboo", "k": "", "x": "The clear acrylic box was suspended over the tennis ball with a smiley face. The tennis ball with the smiley is positioned on a wooden table. The clear acrylic box hanging from an orange cord lowers to cover the tennis ball with a smiley face."}, {"t": "Paint on glass", "f": "t7_0131_center_paint-on-glass", "k": "", "x": "On top of the acrylic sheet was placed a small dollop of red paint. The paintbrush is attached to the black platform sitting next to the clear acrylic sheet with red paint on it on a wooden table. The paintbrush rotates clockwise on the black platform, passes through the dollop of red paint on the clear acrylic sheet, and moves past the dollop of red paint."}, {"t": "Paper in water", "f": "t7_0136_left_paper-in-water", "k": "", "x": "The blue-black grabber tool was holding the small crumpled piece of paper at the inner rim of the glass containing the blue liquid and the green water level marking. The blue-black grabber releases the small crumpled piece of paper into the glass containing blue liquid with a green band marking the water level."}]</script>
+      </div>
+      <p class="note">Every method continues the same three observed seconds; the clips are its next five. The Blender + MiniMax-H3 clips use the full MiniMax-H3 model.</p>
+    </div>
+  </div>
+</section>
+
+<section id="findings">
+  <div class="wrap">
+    <div class="head">
+      <p class="eyebrow">Findings</p>
+      <h2>When do executable world states help?</h2>
+    </div>
+    <div class="fboxes">
+      <article class="fbox help">
+        <p class="fnum">Finding 1</p>
+        <p class="fstate">Executable states <b>help</b> when a task is a direct geometric operation on 3D structure, such as changing the viewpoint or moving rigid objects.</p>
+      </article>
+      <article class="fbox short">
+        <p class="fnum">Finding 2</p>
+        <p class="fstate">Executable states <b>fall short</b> when an answer combines several noisy state estimates or requires physical realism (hands, non-rigid dynamics, photorealism).</p>
+      </article>
+      <article class="fbox care">
+        <p class="fnum">Finding 3</p>
+        <p class="fstate">Executable states can beat video despite imperfect reconstruction, but error tolerance varies by task, and <b>a wrong state hurts more than a missing one</b>.</p>
+      </article>
+    </div>
+    <div class="sheets">
+      <figure class="sheet"><button type="button" aria-label="Enlarge Figure 7"><img loading="lazy" src="assets/paper/fig7_analysis.png" width="1994" height="816" alt="Figure 7 of the paper: analysis of reads from executable states, with accuracy against the number of objects, correlations between scene metrics and question accuracy, and accuracy against the scene's error."></button>
+        <figcaption>Figure 7. State errors compound across the estimates an answer combines; state accuracy, not visual similarity, predicts question accuracy; code input tolerates moderate error.</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<section class="band cite" id="cite">
+  <div class="wrap">
+    <div class="head">
+      <p class="eyebrow">Cite</p>
+      <h2>BibTeX</h2>
+    </div>
+    <pre class="mono" id="bibtex">@article{yu2026videocos,
+  title   = {VideoCoS: When Do Executable World States Help Video Reasoning and Generation?},
+  author  = {Yu, Shoubin and Lee, Daeun and Wang, Zun and Lin, Han and Zhang, Yue and Bansal, Mohit},
+  journal = {arXiv preprint},
+  year    = {2026}
+}</pre>
+    <div class="row"><button type="button" class="btn" id="copy-bib">Copy BibTeX</button></div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>VideoCoS builds on <a href="https://www.blender.org/">Blender</a>, <a href="https://github.com/facebookresearch/sam3">SAM 3</a>, <a href="https://github.com/facebookresearch/sam-3d-objects">SAM 3D Objects</a>, <a href="https://github.com/ByteDance-Seed/Depth-Anything-3">Depth Anything 3</a>, Qwen, <a href="https://huggingface.co/MiniMaxAI/MiniMax-H3">MiniMax-H3</a> and <a href="https://github.com/sgl-project/sglang">SGLang</a>, and evaluates on <a href="https://huggingface.co/datasets/nyu-visionx/VSI-Bench">VSI-Bench</a>, <a href="https://huggingface.co/datasets/basilevh/Kubric-4D">Kubric-4D</a>, <a href="https://huggingface.co/datasets/ego2act/ego2act-bench">Ego2Act</a> and <a href="https://huggingface.co/datasets/Anates-Labs-Research/Physics-IQ-Verified">Physics-IQ Verified</a>. The film’s scene comes from <a href="https://www.projectaria.com/datasets/adt/">Aria Digital Twin</a>. We thank their authors; videos and scenes from these datasets, and the baseline generations shown beside ours, remain under their own terms.</p>
+    <p>© 2026 the VideoCoS authors, UNC Chapel Hill.</p>
+  </div>
+</footer>
+
+<dialog class="zoom" aria-label="Enlarged figure"><img alt=""></dialog>
+
+<script defer src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>
+<script defer src="assets/models/apartment.meta.js"></script>
+<script defer src="assets/models/kitchen.meta.js"></script>
+<script defer src="assets/models/bedroom.meta.js"></script>
+<script defer src="assets/models/classroom.meta.js"></script>
+<script defer src="assets/models/bathroom.meta.js"></script>
+<script defer src="assets/site.js"></script>
+<script defer src="assets/viewer.js"></script>
+</body>
+</html>
