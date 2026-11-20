@@ -7,3 +7,10 @@ Code: <https://github.com/Yui010206/VideoCoS-code>
 
 The page is static: `index.html` plus `assets/`. Videos and scenes from the benchmarks, and the baseline generations
 shown beside ours, remain under their own terms.
+
+## Publishing
+
+GitHub Pages uses **GitHub Actions** as its publishing source. The
+`Deploy GitHub Pages` workflow publishes `index.html`, `.nojekyll`, and `assets/`
+automatically whenever `main` changes. It can also be run manually from the
+repository's Actions tab. No package installation or site generator is needed.
