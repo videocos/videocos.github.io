@@ -239,7 +239,7 @@
         <div class="txt">
           <span class="chip write">Write · goal-conditioned planning</span>
           <h3>Plan the <em>motion</em> in the state, then render it</h3>
-          <p>Ego2Act. From one start photo and a goal, the agent keyframes rigid object motion in Blender. <b>Rendered in Blender, VideoCoS has the second-highest task score</b> after Seedance-2.0, and the lowest physical score: the plan has no hand. Conditioning MiniMax-H3 on the plan adds one. The clips compare it with four video generators.</p>
+          <p>Ego2Act. From one start photo and a goal, the agent keyframes rigid object motion in Blender. <b>Rendered in Blender, VideoCoS has the second-highest task score</b> after Seedance-2.0, and the lowest physical score: the plan has no hand. Re-rendering the plan with MiniMax-H3 adds one and raises that model’s task score from 54.3 to 63.5. The clips compare it with four video generators.</p>
         </div>
         <div data-viz="gcp" class="rv"></div>
       </div>
@@ -257,7 +257,7 @@
         <div class="txt">
           <span class="chip write">Write · future prediction</span>
           <h3><em>Simulate</em> forward from the last observed frame</h3>
-          <p>Physics-IQ. The agent sets up rigid-body physics in the codified scene and simulates the next five seconds. <b>Its rigid trajectory error (11.1) is close to Cosmos3</b> (10.3 and 10.5) and well below MiniMax-H3 (16.1); on non-rigid motion and on the Physics-IQ score it trails.</p>
+          <p>Physics-IQ. The agent sets up rigid-body physics in the codified scene and simulates the next five seconds. <b>Its rigid trajectory error (11.1) is close to Cosmos3</b> (10.3 and 10.5) and well below MiniMax-H3 (16.9); on non-rigid motion and on the Physics-IQ score it trails. Re-rendering the plan with MiniMax-H3 lifts that model’s Physics-IQ score from 38.6 to 51.9.</p>
         </div>
         <div data-viz="fp" class="rv"></div>
       </div>
@@ -293,7 +293,7 @@
       </article>
       <article class="fbox care glow tilt rv d2">
         <p class="fnum">Finding 3</p>
-        <p class="fstate">Executable states can beat video despite imperfect reconstruction, but error tolerance varies by task, and <b>a wrong state hurts more than a missing one</b>.</p>
+        <p class="fstate">Our executable state improves over raw perception input, and <b>the gain tracks the accuracy of the queried attributes</b> rather than visual similarity, with error tolerance varying across question types.</p>
         <a class="go" href="#res-read">Reads from codified scenes</a>
       </article>
     </div>
